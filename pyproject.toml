@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "epmc-xml"
+version = "0.1.0"
+description = "Get articles from Europe PMC as xml for further processing"
+authors = ["Andrew Green <a.f.green1@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "epmc_xml"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+ratelimiter = "^1.2.0.post0"
+requests = "^2.31.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
