@@ -1,11 +1,11 @@
 class Article:
     def __init__(self, title, author_list, abstract, date, sections, type):
-        self.title = ""
-        self.author_list = ""
-        self.abstract = ""
-        self.date = ""
-        self.sections = {}
-        self.type = ""
+        self.title = title
+        self.author_list = author_list
+        self.abstract = abstract
+        self.date = date
+        self.sections = sections
+        self.type = type
 
     def __str__(self):
         return f"Title: {self.title}\nAuthor List: {self.author_list}\nAbstract: {self.abstract}\nDate: {self.date}\nSections: {self.sections}\nType: {self.type}"
