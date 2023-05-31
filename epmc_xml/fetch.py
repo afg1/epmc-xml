@@ -2,7 +2,8 @@ from xml.etree import ElementTree as ET
 
 import ratelimiter
 import requests
-from article import Article
+
+from epmc_xml.article import Article
 
 
 @ratelimiter.RateLimiter(max_calls=10, period=1)
@@ -49,7 +50,7 @@ def get_body(xml_article):
                 ["".join(para.itertext()) for para in subsection_paras]
             )
 
-        section_dict[sec.find("./title").text] = section_text
+        section_dict["".join(sec.find("./title").itertext())] = section_text
 
     return section_dict
 
