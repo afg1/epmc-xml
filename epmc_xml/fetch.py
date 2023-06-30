@@ -14,15 +14,23 @@ def fetch_xml(pmcid):
     if res.status_code == 500:
         return fetch_xml(pmcid)
 
+    # print(res.content)
     return ET.fromstring(res.content)
 
 
 def get_abstract(xml_article):
-    abstract = xml_article.find("./front/article-meta/abstract/")
+    abstract = xml_article.find("./front/article-meta/abstract")
     if abstract is None:
         return ""
     else:
-        return "".join(abstract.itertext())
+        paras = abstract.findall("./p")
+        section_text = ""
+        if len(paras) == 0:
+            section_text += "".join(abstract.itertext())
+        for p in paras:
+            section_text += "".join(p.itertext())
+
+        return section_text
 
 
 def get_title(xml_article):
@@ -37,20 +45,24 @@ def get_body(xml_article):
     sections = xml_article.findall("./body/sec")
     section_dict = {}
     for sec in sections:
-        if len(sec.findall("./p")) == 0:
-            section_text = ""
-        else:
-            section_text = ["".join(para.itertext()) for para in sec.findall("p")][0]
+        title = "".join(sec.find("./title").itertext())
+        paras = sec.findall("./p")
+        section_text = f"{title}\n"
+        if len(paras) == 0:
+            section_text += "".join(sec.itertext())
+        for p in paras:
+            section_text += "".join(p.itertext())
         ## find all subsections
         for subsec in sec.findall("./sec"):
-            subsection_heading = subsec.find("title")
-            subsection_paras = subsec.findall("p")
-            section_text += "".join(subsection_heading.itertext())
+            subsection_heading = subsec.find("./title")
+            subsection_paras = subsec.findall("./p")
+            if subsection_heading is not None:
+                section_text += "".join(subsection_heading.itertext())
             section_text += "".join(
                 ["".join(para.itertext()) for para in subsection_paras]
             )
 
-        section_dict["".join(sec.find("./title").itertext())] = section_text
+        section_dict[title] = section_text
 
     return section_dict
 
