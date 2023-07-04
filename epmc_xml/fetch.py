@@ -51,7 +51,8 @@ def get_body(xml_article):
         if len(paras) == 0:
             section_text += "".join(sec.itertext())
         for p in paras:
-            section_text += "\n\n".join(p.itertext())
+            section_text += "".join(p.itertext())
+            section_text += "\n"
         ## find all subsections
         for subsec in sec.findall("./sec"):
             subsection_heading = subsec.find("./title")
@@ -59,8 +60,9 @@ def get_body(xml_article):
             if subsection_heading is not None:
                 section_text += "".join(subsection_heading.itertext())
             section_text += "".join(
-                ["\n\n".join(para.itertext()) for para in subsection_paras]
+                ["".join(para.itertext()) for para in subsection_paras]
             )
+            section_text += "\n"
 
         section_dict[title] = section_text
 
