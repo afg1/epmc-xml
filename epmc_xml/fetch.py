@@ -2,11 +2,12 @@ from xml.etree import ElementTree as ET
 
 import ratelimiter
 import requests
+from ratelimit import limits
 
 from epmc_xml.article import Article
 
 
-@ratelimiter.RateLimiter(max_calls=10, period=1)
+@limits(calls=5, period=60)
 def fetch_xml(pmcid):
     url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
     res = requests.get(url)
@@ -26,9 +27,9 @@ def get_abstract(xml_article):
         paras = abstract.findall("./p")
         section_text = ""
         if len(paras) == 0:
-            section_text += "".join(abstract.itertext())
+            section_text += " ".join(abstract.itertext())
         for p in paras:
-            section_text += "".join(p.itertext())
+            section_text += " ".join(p.itertext())
 
         return section_text
 
