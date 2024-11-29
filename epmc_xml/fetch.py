@@ -1,6 +1,5 @@
 from xml.etree import ElementTree as ET
 
-import ratelimiter
 import requests
 from ratelimit import limits
 
@@ -65,7 +64,7 @@ def get_body(xml_article):
             )
             section_text += "\n"
 
-        section_dict[title] = section_text
+        section_dict[title.lower()] = section_text
 
     return section_dict
 
