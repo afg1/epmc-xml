@@ -6,7 +6,7 @@ from ratelimit import limits
 from epmc_xml.article import Article
 
 
-@limits(calls=5, period=60)
+@limits(calls=10, period=1)
 def fetch_xml(pmcid):
     url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
     res = requests.get(url)
