@@ -59,7 +59,8 @@ def get_body(xml_article):
             subsection_paras = subsec.findall("./p")
             if subsection_heading is not None:
                 section_text += "".join(subsection_heading.itertext())
-            section_text += "".join(
+                section_text += "\n"
+            section_text += "\n".join(
                 ["".join(para.itertext()) for para in subsection_paras]
             )
             section_text += "\n"
