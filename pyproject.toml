@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "epmc-xml"
-version = "0.1.10"
+version = "0.1.11"
 description = "Get articles from Europe PMC as xml for further processing"
 authors = ["Andrew Green <a.f.green1@gmail.com>"]
 license = "MIT"
