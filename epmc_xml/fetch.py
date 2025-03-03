@@ -1,3 +1,30 @@
+def find_figure_references(xml_article):
+    """Find all figure references in the article text and their locations."""
+    figure_refs = {}
+
+    # Find all sections
+    sections = xml_article.findall("./body/sec")
+
+    for sec in sections:
+        title_elem = sec.find("./title")
+        if title_elem is None:
+            continue
+
+        section_title = "".join(title_elem.itertext()).lower()
+
+        # Find all figure references (xref elements with ref-type="fig")
+        for xref in sec.findall(".//xref[@ref-type='fig']"):
+            fig_id = xref.get("rid")
+            ref_text = "".join(xref.itertext())
+
+            if fig_id not in figure_refs:
+                figure_refs[fig_id] = []
+
+            figure_refs[fig_id].append({"section": section_title, "ref_text": ref_text})
+
+    return figure_refs
+
+
 from xml.etree import ElementTree as ET
 
 import requests
@@ -41,38 +68,53 @@ def get_title(xml_article):
         return "".join(title.itertext())
 
 
-def extract_figure_captions(section, section_title):
-    """Extract figure captions from a section or subsection."""
-    figures = {}
+def extract_figures(xml_article):
+    """Extract figures from the floats-group in the XML document."""
+    figures = []
 
-    # Find all figures in this section
-    for fig in section.findall(".//fig"):
-        fig_id = fig.get("id", "unknown")
+    # Find the floats-group element
+    floats_group = xml_article.find("./floats-group")
 
-        # Extract the label if it exists
-        label_elem = fig.find("./label")
-        label = "".join(label_elem.itertext()) if label_elem is not None else ""
+    if floats_group is not None:
+        # Get all figure elements
+        for fig in floats_group.findall("./fig"):
+            fig_data = {}
 
-        # Extract the caption
-        caption_elem = fig.find("./caption")
-        caption_text = ""
-        if caption_elem is not None:
-            # First try to get paragraph text
-            caption_paras = caption_elem.findall("./p")
-            if caption_paras:
-                for p in caption_paras:
-                    caption_text += "".join(p.itertext()) + "\n"
-            else:
-                # If no paragraphs, get all text
-                caption_text = "".join(caption_elem.itertext())
+            # Get figure ID
+            fig_id = fig.get("id", "unknown")
+            fig_data["id"] = fig_id
 
-        # Combine label and caption
-        figure_content = f"{label}: {caption_text}" if label else caption_text
+            # Get figure label
+            label_elem = fig.find("./label")
+            fig_data["label"] = (
+                "".join(label_elem.itertext()) if label_elem is not None else ""
+            )
 
-        if figure_content.strip():
-            if section_title not in figures:
-                figures[section_title] = {}
-            figures[section_title][fig_id] = figure_content
+            # Get figure caption
+            caption_elem = fig.find("./caption")
+            caption_text = ""
+            if caption_elem is not None:
+                # Get paragraphs within caption
+                caption_paras = caption_elem.findall("./p")
+                if caption_paras:
+                    for p in caption_paras:
+                        caption_text += "".join(p.itertext()) + "\n"
+                else:
+                    # If no paragraphs, get all text
+                    caption_text = "".join(caption_elem.itertext())
+
+            fig_data["caption"] = caption_text.strip()
+
+            # Get graphic elements (if present)
+            graphic_elems = fig.findall(".//graphic")
+            graphics = []
+            for graphic in graphic_elems:
+                graphics.append(graphic.get("{http://www.w3.org/1999/xlink}href", ""))
+
+            fig_data["graphics"] = graphics
+
+            # Add to the figures list
+            figures.append(fig_data)
 
     return figures
 
@@ -80,7 +122,6 @@ def extract_figure_captions(section, section_title):
 def get_body(xml_article):
     sections = xml_article.findall("./body/sec")
     section_dict = {}
-    figures_dict = {}
 
     for sec in sections:
         title_elem = sec.find("./title")
@@ -100,11 +141,6 @@ def get_body(xml_article):
                 section_text += "".join(p.itertext())
                 section_text += "\n"
 
-        # Extract figures from this section
-        section_figures = extract_figure_captions(sec, section_title)
-        if section_figures:
-            figures_dict.update(section_figures)
-
         ## find all subsections
         for subsec in sec.findall("./sec"):
             subsection_heading = subsec.find("./title")
@@ -120,14 +156,23 @@ def get_body(xml_article):
             )
             section_text += "\n"
 
-            # Extract figures from subsections too
-            subsection_figures = extract_figure_captions(subsec, section_title)
-            if subsection_figures:
-                figures_dict.update(subsection_figures)
-
         section_dict[section_title] = section_text
 
-    return section_dict, figures_dict
+    # Extract figures from the floats-group
+    figures = extract_figures(xml_article)
+
+    # Find figure references in the text
+    figure_refs = find_figure_references(xml_article)
+
+    # Add reference information to each figure
+    for figure in figures:
+        fig_id = figure["id"]
+        if fig_id in figure_refs:
+            figure["references"] = figure_refs[fig_id]
+        else:
+            figure["references"] = []
+
+    return section_dict, figures
 
 
 def get_author_list(xml_article):
