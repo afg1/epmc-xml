@@ -41,6 +41,80 @@ class Article:
     def get_type(self):
         return self.type
 
+    def get_section(self, section_name, include_figures=False, figures_placement="end"):
+        """
+        Generate text for a specific section with optional figure captions.
+
+        Args:
+            section_name (str): The name of the section to retrieve
+            include_figures (bool): Whether to include figure captions in the output
+            figures_placement (str): Where to place figures - 'end' (at section end),
+                                    'inline' (at references), or 'separate' (as a separate text)
+
+        Returns:
+            str or tuple: The formatted section text, or a tuple of (section_text, figures_text)
+                          if figures_placement is 'separate'
+        """
+        # Check if the section exists
+        section_key = section_name.lower()
+        if section_key not in self.sections:
+            return f"Section '{section_name}' not found."
+
+        section_str = ""
+        figures_str = ""
+
+        # Add section title and content
+        section_str += section_name + "\n"
+        section_str += self.sections[section_key] + "\n"
+
+        # Find figures referenced in this section
+        section_figures = []
+        if include_figures:
+            for figure in self.figures:
+                for ref in figure.get("references", []):
+                    if ref["section"] == section_key:
+                        if figure not in section_figures:
+                            section_figures.append(figure)
+
+        # Add inline figures if requested
+        if include_figures and figures_placement == "inline" and section_figures:
+            for figure in section_figures:
+                section_str += "\n--- FIGURE ---\n"
+                section_str += f"Figure {figure['label']}: {figure['caption']}\n"
+                section_str += "--- END FIGURE ---\n\n"
+
+        # Build separate figures section if needed
+        if (
+            include_figures
+            and (figures_placement == "end" or figures_placement == "separate")
+            and section_figures
+        ):
+            figures_str += "--- FIGURES ---\n\n"
+            for figure in section_figures:
+                figures_str += "--- FIGURE ---\n"
+                figures_str += f"Figure {figure['label']}: {figure['caption']}\n"
+
+                # Include where the figure is referenced in this section
+                section_refs = [
+                    ref["ref_text"]
+                    for ref in figure["references"]
+                    if ref["section"] == section_key
+                ]
+                if section_refs:
+                    figures_str += f"Referenced as: {', '.join(section_refs)}\n"
+
+                figures_str += "--- END FIGURE ---\n\n"
+
+        # If separate mode, return both texts
+        if include_figures and figures_placement == "separate":
+            return section_str, figures_str
+
+        # Otherwise, combine section and figures if needed
+        if include_figures and figures_placement == "end":
+            section_str += "\n" + figures_str
+
+        return section_str
+
     def get_body(self, include_figures=False, figures_placement="end"):
         """
         Generate body text with optional figure captions.
