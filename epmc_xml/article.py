@@ -190,3 +190,37 @@ class Article:
             body_str += "\n\n" + figures_str
 
         return body_str
+
+    def add_figures_section(self):
+        """
+        Add a new section to the sections dictionary that contains all figure captions.
+        The section will be named 'figures'.
+
+        Returns:
+            bool: True if figures were added successfully, False if no figures were found
+        """
+        if not self.figures:
+            return False
+
+        figures_text = "Figures\n\n"
+
+        for figure in self.figures:
+            figures_text += "--- FIGURE ---\n"
+            figures_text += f"Figure {figure['label']}: {figure['caption']}\n"
+
+            # Include reference information if available
+            if figure.get("references"):
+                refs = []
+                for ref in figure["references"]:
+                    refs.append(f"{ref['ref_text']} (in {ref['section']})")
+                figures_text += f"Referenced as: {', '.join(refs)}\n"
+
+            figures_text += "--- END FIGURE ---\n\n"
+
+        # Add the figures section to the sections dictionary
+        self.sections["figures"] = figures_text
+
+        # Update the section index
+        self.section_index["figures"] = len(self.sections) - 1
+
+        return True
