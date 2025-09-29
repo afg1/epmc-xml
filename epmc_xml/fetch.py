@@ -28,18 +28,20 @@ def find_figure_references(xml_article):
 from xml.etree import ElementTree as ET
 
 import requests
-from ratelimit import limits
+from backoff import expo, on_exception
+from ratelimit import RateLimitException, limits
 
 from epmc_xml.article import Article
 
 
+@on_exception(expo, RateLimitException, max_tries=10)
 @limits(calls=10, period=1)
 def fetch_xml(pmcid):
     url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
     res = requests.get(url)
 
-    if res.status_code == 500:
-        return fetch_xml(pmcid)
+    if res.status_code != 200:
+        raise Exception("API response: {}".format(res.status_code))
 
     # print(res.content)
     return ET.fromstring(res.content)
